@@ -7,16 +7,23 @@ import { Button } from "@/components/ui/button";
 export default function LoginPage() {
   const [configured, setConfigured] = useState<boolean | null>(null);
   const [redirectUri, setRedirectUri] = useState<string | null>(null);
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const response = await fetch("/api/auth/config");
-        const data = await response.json();
-        setConfigured(Boolean(data?.configured));
-        setRedirectUri(data?.redirectUri || null);
+        const [configResponse, statusResponse] = await Promise.all([
+          fetch("/api/auth/config"),
+          fetch("/api/auth/status"),
+        ]);
+        const configData = await configResponse.json();
+        const statusData = await statusResponse.json();
+        setConfigured(Boolean(configData?.configured));
+        setRedirectUri(configData?.redirectUri || null);
+        setAuthenticated(Boolean(statusData?.authenticated));
       } catch {
         setConfigured(false);
+        setAuthenticated(false);
       }
     };
 
@@ -31,6 +38,14 @@ export default function LoginPage() {
           We request <span className="text-slate-200">repo</span> access to read
           your repositories for deployments.
         </p>
+        {authenticated && (
+          <div className="text-sm text-slate-300">
+            You’re already connected.{" "}
+            <Link className="underline" href="/dashboard">
+              Go to dashboard
+            </Link>
+          </div>
+        )}
         {configured === false && (
           <div className="text-sm text-red-400">
             Missing GitHub OAuth config. Set{" "}
@@ -44,9 +59,20 @@ export default function LoginPage() {
             )}
           </div>
         )}
-        <Button asChild className="w-full" disabled={configured === false}>
+        <Button
+          asChild
+          className="w-full"
+          disabled={configured === false || authenticated === true}
+        >
           <Link href="/api/auth/github">Continue with GitHub</Link>
         </Button>
+        <p className="text-xs text-slate-500">
+          After login, head to{" "}
+          <Link className="underline" href="/dashboard">
+            dashboard
+          </Link>{" "}
+          to pick a project.
+        </p>
       </div>
     </main>
   );

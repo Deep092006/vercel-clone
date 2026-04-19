@@ -68,6 +68,7 @@ Notes:
 - The API requires access to the Docker socket. If your compose project name isn’t `vercel-clone`, set `DOCKER_NETWORK` to match your network (e.g. `yourproject_default`).
 - The frontend proxies `/api/project` to `INTERNAL_API_URL` (defaults to `http://api-server:9000` in compose).
 - Deploy logs are polled by default. Set `NEXT_PUBLIC_SOCKET_ENABLED=true` if you want to use the socket stream on port `9002`.
+- MongoDB is used to store deployments; compose provides it at `mongodb://mongo:27017/vercel_clone`.
 
 ### GitHub OAuth
 

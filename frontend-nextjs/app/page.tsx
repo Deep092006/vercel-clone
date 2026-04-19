@@ -1,255 +1,108 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { io } from "socket.io-client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Github } from "lucide-react";
-import { Fira_Code } from "next/font/google";
-import axios from "axios";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Github } from "lucide-react";
 
-const firaCode = Fira_Code({ subsets: ["latin"] });
-
-const getBaseOrigin = () => {
-  if (typeof window === "undefined") return "http://localhost";
-  return `${window.location.protocol}//${window.location.hostname}`;
+type UserProfile = {
+  login: string;
+  name?: string | null;
+  avatar_url: string;
 };
 
-export default function Home() {
-  const baseOrigin = getBaseOrigin();
-  const socketUrl =
-    process.env.NEXT_PUBLIC_SOCKET_URL || `${baseOrigin}:9002`;
-  const socketEnabled = process.env.NEXT_PUBLIC_SOCKET_ENABLED === "true";
-  const socket = useMemo(() => {
-    if (!socketEnabled) return null;
-    return io(socketUrl, {
-      transports: ["websocket", "polling"],
-    });
-  }, [socketEnabled, socketUrl]);
-
-  const [repoURL, setURL] = useState<string>("");
-
-  const [logs, setLogs] = useState<string[]>([]);
-
-  const [loading, setLoading] = useState(false);
-
-  const [projectId, setProjectId] = useState<string | undefined>();
-  const [deployStatus, setDeployStatus] = useState<string | undefined>();
-  const [pendingPreviewURL, setPendingPreviewURL] = useState<
-    string | undefined
-  >();
-  const [deployPreviewURL, setDeployPreviewURL] = useState<
-    string | undefined
-  >();
-  const [usePolling, setUsePolling] = useState(false);
-
-  const logContainerRef = useRef<HTMLElement>(null);
-  const pendingPreviewURLRef = useRef<string | undefined>();
-  const logCursorRef = useRef(0);
+export default function LandingPage() {
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    pendingPreviewURLRef.current = pendingPreviewURL;
-  }, [pendingPreviewURL]);
-
-  const isValidURL: [boolean, string | null] = useMemo(() => {
-    if (!repoURL || repoURL.trim() === "") return [false, null];
-    const regex = new RegExp(
-      /^(?:https?:\/\/)?(?:www\.)?github\.com\/([^\/]+)\/([^\/]+)(?:\/)?$/
-    );
-    return [regex.test(repoURL), "Enter valid Github Repository URL"];
-  }, [repoURL]);
-
-  const handleClickDeploy = useCallback(async () => {
-    setLoading(true);
-
-    try {
-      const { data } = await axios.post(`/api/project`, {
-        gitURL: repoURL,
-        slug: projectId,
-      });
-
-      if (data && data.data) {
-        const { projectSlug, url } = data.data;
-        setLogs([]);
-        setDeployStatus("Queued");
-        setPendingPreviewURL(url);
-        setDeployPreviewURL(undefined);
-        setProjectId(projectSlug);
-        logCursorRef.current = 0;
-
-        if (socket) {
-          setUsePolling(false);
-          console.log(`Subscribing to logs:${projectSlug}`);
-          socket.emit("subscribe", `logs:${projectSlug}`);
-        } else {
-          setUsePolling(true);
+    const load = async () => {
+      try {
+        const status = await fetch("/api/auth/status").then((res) => res.json());
+        const isAuthed = Boolean(status?.authenticated);
+        setAuthenticated(isAuthed);
+        if (!isAuthed) return;
+        const userResponse = await fetch("/api/github/user");
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setProfile(userData);
         }
+      } catch {
+        setAuthenticated(false);
       }
-    } catch (error) {
-      console.error("Failed to start deploy", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId, repoURL, socket]);
+    };
 
-  const processLogLine = useCallback((logLine: string) => {
-    const normalized = typeof logLine === "string" ? logLine.trim() : "";
-
-    if (normalized.startsWith("error:")) {
-      setDeployStatus("Failed");
-    } else if (
-      normalized === "Build Started..." ||
-      normalized === "Build Started"
-    ) {
-      setDeployStatus("Building");
-    } else if (
-      normalized === "Build Complete" ||
-      normalized === "Starting to upload"
-    ) {
-      setDeployStatus("Uploading");
-    } else if (normalized === "Done") {
-      setDeployStatus("Ready");
-      const pendingUrl = pendingPreviewURLRef.current;
-      if (pendingUrl) setDeployPreviewURL(pendingUrl);
-    }
-
-    setLogs((prev) => [...prev, logLine]);
-    logContainerRef.current?.scrollIntoView({ behavior: "smooth" });
+    load();
   }, []);
 
-  const handleSocketIncommingMessage = useCallback(
-    (message: string) => {
-      console.log(`[Incomming Socket Message]:`, typeof message, message);
-      const { log } = JSON.parse(message);
-      processLogLine(log);
-    },
-    [processLogLine]
-  );
-
-  useEffect(() => {
-    if (!socket) return;
-    socket.on("message", handleSocketIncommingMessage);
-
-    return () => {
-      socket.off("message", handleSocketIncommingMessage);
-    };
-  }, [handleSocketIncommingMessage, socket]);
-
-  useEffect(() => {
-    if (!socket) return;
-    return () => {
-      socket.disconnect();
-    };
-  }, [socket]);
-
-  useEffect(() => {
-    if (!socket) return;
-    const handleConnect = () => setUsePolling(false);
-    const handleConnectError = () => setUsePolling(true);
-    const handleDisconnect = () => setUsePolling(true);
-
-    socket.on("connect", handleConnect);
-    socket.on("connect_error", handleConnectError);
-    socket.on("disconnect", handleDisconnect);
-
-    return () => {
-      socket.off("connect", handleConnect);
-      socket.off("connect_error", handleConnectError);
-      socket.off("disconnect", handleDisconnect);
-    };
-  }, [socket]);
-
-  useEffect(() => {
-    if (!usePolling || !projectId) return;
-
-    let canceled = false;
-
-    const pollLogs = async () => {
-      try {
-        const response = await axios.get(
-          `/api/logs/${projectId}?since=${logCursorRef.current}`
-        );
-        const { logs: newLogs, next } = response.data || {};
-
-        if (!canceled && Array.isArray(newLogs) && newLogs.length > 0) {
-          newLogs.forEach(processLogLine);
-          if (typeof next === "number") {
-            logCursorRef.current = next;
-          }
-        }
-      } catch (error) {
-        console.error("Failed to poll logs", error);
-      }
-    };
-
-    pollLogs();
-    const interval = setInterval(pollLogs, 2000);
-
-    return () => {
-      canceled = true;
-      clearInterval(interval);
-    };
-  }, [processLogLine, projectId, usePolling]);
-
   return (
-    <main className="flex justify-center items-center h-[100vh]">
-      <div className="w-[600px]">
-        <div className="flex justify-end gap-2 mb-4">
-          <Button asChild variant="outline" size="sm">
-            <Link href="/github">Repos</Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/login">GitHub Login</Link>
-          </Button>
-        </div>
-        <span className="flex justify-start items-center gap-2">
-          <Github className="text-5xl" />
-          <Input
-            disabled={loading}
-            value={repoURL}
-            onChange={(e) => setURL(e.target.value)}
-            type="url"
-            placeholder="Github URL"
-          />
-        </span>
-        <Button
-          onClick={handleClickDeploy}
-          disabled={!isValidURL[0] || loading}
-          className="w-full mt-3"
-        >
-          {loading ? "In Progress" : "Deploy"}
-        </Button>
-        {deployStatus && (
-          <p className="mt-2 text-sm text-slate-200">Status: {deployStatus}</p>
-        )}
-        {deployPreviewURL && (
-          <div className="mt-2 bg-slate-900 py-4 px-2 rounded-lg">
-            <p>
-              Preview URL{" "}
-              <a
-                target="_blank"
-                className="text-sky-400 bg-sky-950 px-3 py-2 rounded-lg"
-                href={deployPreviewURL}
-              >
-                {deployPreviewURL}
-              </a>
+    <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
+      <div className="max-w-6xl mx-auto px-6 py-10">
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Github className="text-2xl" />
+            <span className="font-semibold text-lg">Vercel Clone</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/dashboard">Dashboard</Link>
+            </Button>
+            {authenticated && profile ? (
+              <Link href="/dashboard" className="flex items-center gap-2">
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.login}
+                  className="h-8 w-8 rounded-full border border-slate-700"
+                />
+                <span className="text-sm text-slate-200">
+                  {profile.name || profile.login}
+                </span>
+              </Link>
+            ) : (
+              <Button asChild variant="outline" size="sm">
+                <Link href="/login">GitHub Login</Link>
+              </Button>
+            )}
+          </div>
+        </header>
+
+        <section className="mt-12 grid md:grid-cols-2 gap-10 items-center">
+          <div className="space-y-4">
+            <h1 className="text-4xl font-semibold leading-tight">
+              Self-hosted deployments for your GitHub repos.
+            </h1>
+            <p className="text-slate-400">
+              Authorize GitHub, pick a repo, configure env vars, and deploy with
+              local Docker + MinIO.
             </p>
+            <div className="flex gap-3">
+              <Button asChild>
+                <Link href={authenticated ? "/dashboard" : "/login"}>
+                  {authenticated ? "Go to dashboard" : "Connect GitHub"}
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/dashboard">View dashboard</Link>
+              </Button>
+            </div>
           </div>
-        )}
-        {logs.length > 0 && (
-          <div
-            className={`${firaCode.className} text-sm text-green-500 logs-container mt-5 border-green-500 border-2 rounded-lg p-4 h-[300px] overflow-y-auto`}
-          >
-            <pre className="flex flex-col gap-1">
-              {logs.map((log, i) => (
-                <code
-                  ref={logs.length - 1 === i ? logContainerRef : undefined}
-                  key={i}
-                >{`> ${log}`}</code>
-              ))}
-            </pre>
+          <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-6 shadow-xl">
+            <h2 className="text-lg font-semibold mb-4">How it works</h2>
+            <div className="space-y-4 text-sm text-slate-400">
+              <div>
+                <p className="font-semibold text-slate-200">1. Login</p>
+                <p>Authorize GitHub with repo access.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-200">2. Choose repo</p>
+                <p>Select a repo and set any required env vars.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-200">3. Deploy</p>
+                <p>Build runs locally and outputs to MinIO.</p>
+              </div>
+            </div>
           </div>
-        )}
+        </section>
       </div>
     </main>
   );
