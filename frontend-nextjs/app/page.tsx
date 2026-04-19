@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Github } from "lucide-react";
 import { Fira_Code } from "next/font/google";
 import axios from "axios";
+import Link from "next/link";
 
 const firaCode = Fira_Code({ subsets: ["latin"] });
 
@@ -193,6 +194,14 @@ export default function Home() {
   return (
     <main className="flex justify-center items-center h-[100vh]">
       <div className="w-[600px]">
+        <div className="flex justify-end gap-2 mb-4">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/github">Repos</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/login">GitHub Login</Link>
+          </Button>
+        </div>
         <span className="flex justify-start items-center gap-2">
           <Github className="text-5xl" />
           <Input

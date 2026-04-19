@@ -69,6 +69,15 @@ Notes:
 - The frontend proxies `/api/project` to `INTERNAL_API_URL` (defaults to `http://api-server:9000` in compose).
 - Deploy logs are polled by default. Set `NEXT_PUBLIC_SOCKET_ENABLED=true` if you want to use the socket stream on port `9002`.
 
+### GitHub OAuth
+
+Set these environment variables to enable GitHub login with **repo** scope:
+1. `GITHUB_CLIENT_ID`
+2. `GITHUB_CLIENT_SECRET`
+3. `GITHUB_REDIRECT_URI` (optional, defaults to `http://localhost:3000/api/auth/github/callback`)
+
+Use `/login` to authorize and `/github` to verify repo access.
+
 ### Demo
 
 [Watch The Demo Video](https://imgur.com/I6KgmNR)
