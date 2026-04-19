@@ -77,7 +77,14 @@ Set these environment variables to enable GitHub login with **repo** scope:
 2. `GITHUB_CLIENT_SECRET`
 3. `GITHUB_REDIRECT_URI` (optional, defaults to `http://localhost:3000/api/auth/github/callback`)
 
-Use `/login` to authorize and `/github` to verify repo access.
+Use `/login` to authorize; `/github` and `/repos` redirect to `/projects/new`.
+
+Frontend route flow:
+1. `/` - landing page
+2. `/login` - GitHub OAuth page
+3. `/dashboard` - deployment history + New repo button
+4. `/projects/new` - repository selection and deployment creation
+5. `/projects/:id` - deployment details with logs and status
 
 ### Demo
 

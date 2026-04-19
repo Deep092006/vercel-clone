@@ -85,6 +85,9 @@ services:
 
   frontend-nextjs:
     build: ./frontend-nextjs
+    depends_on:
+      - api-server
+      - mongo
     environment:
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}

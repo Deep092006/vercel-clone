@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     const user = await fetchGitHubUser(token);
     const db = await getDb();
 
-    await db.collection("deployments").insertOne({
+    const insertResult = await db.collection("deployments").insertOne({
       ownerLogin: user.login,
       repoUrl: gitURL,
       repoFullName: repoFullName || null,
@@ -67,9 +67,19 @@ export async function POST(request: Request) {
       previewUrl: responseBody?.data?.url,
       status: "queued",
       createdAt: new Date(),
+      updatedAt: new Date(),
+      latestLog: "Build queued",
     });
 
-    return NextResponse.json(responseBody, { status: response.status });
+    const responsePayload = {
+      ...responseBody,
+      data: {
+        ...(responseBody?.data || {}),
+        deploymentId: insertResult.insertedId.toString(),
+      },
+    };
+
+    return NextResponse.json(responsePayload, { status: response.status });
   } catch (error) {
     return NextResponse.json(
       { status: "error", error: "Failed to start deployment" },
