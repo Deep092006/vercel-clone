@@ -3,6 +3,8 @@ const { generateSlug } = require('random-word-slugs')
 const { Server } = require('socket.io')
 const Redis = require('ioredis')
 const Docker = require('dockerode')
+const { spawn } = require('child_process')
+const path = require('path')
 const { loadConfig } = require('./config')
 const cors = require('cors')
 
@@ -39,7 +41,9 @@ io.on('connection', socket => {
 
 io.listen(9002, () => console.log('Socket Server 9002'))
 
-const docker = new Docker({ socketPath: config.dockerSocketPath })
+const docker = config.buildRunnerMode === 'docker'
+    ? new Docker({ socketPath: config.dockerSocketPath })
+    : null
 
 app.use(cors())
 app.use(express.json())
@@ -57,6 +61,37 @@ function appendLog(channel, logLine) {
 }
 
 async function runBuildContainer({ gitURL, projectSlug }) {
+    if (config.buildRunnerMode === 'local') {
+        const outputDir = path.join('/tmp', `build-${projectSlug}-${Date.now()}`)
+        const envVars = {
+            ...process.env,
+            GIT_REPOSITORY__URL: gitURL,
+            PROJECT_ID: projectSlug,
+            REDIS_URL: config.redisUrl,
+            S3_BUCKET: config.s3.bucket,
+            S3_ENDPOINT: config.s3.endpoint,
+            S3_PORT: String(config.s3.port),
+            S3_USE_SSL: String(config.s3.useSSL),
+            S3_ACCESS_KEY_ID: config.s3.accessKeyId,
+            S3_SECRET_ACCESS_KEY: config.s3.secretAccessKey,
+            S3_REGION: config.s3.region,
+            OUTPUT_DIR: outputDir
+        }
+
+        const child = spawn('bash', ['main.sh'], {
+            cwd: config.buildServerPath,
+            env: envVars,
+            detached: true,
+            stdio: 'ignore'
+        })
+        child.unref()
+        return
+    }
+
+    if (!docker) {
+        throw new Error('Docker client unavailable for docker runner mode')
+    }
+
     const containerName = `build-${projectSlug}-${Date.now()}`
     const envVars = [
         `GIT_REPOSITORY__URL=${gitURL}`,

@@ -1,71 +1,193 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
+:root {
+  font-family: "Geist", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Vercel-like Starkness ────────────────────────────────────── */
+
+body {
+  background-color: #000;
+  color: #ededed;
+}
+
+::selection {
+  background-color: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+/* ── Subdued Animations ───────────────────────────────────────── */
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.fu1 { animation: fadeUp .5s cubic-bezier(0.16, 1, 0.3, 1) .08s both; }
+.fu2 { animation: fadeUp .5s cubic-bezier(0.16, 1, 0.3, 1) .15s both; }
+.fu3 { animation: fadeUp .5s cubic-bezier(0.16, 1, 0.3, 1) .22s both; }
+.fu4 { animation: fadeUp .5s cubic-bezier(0.16, 1, 0.3, 1) .29s both; }
+.fu5 { animation: fadeUp .5s cubic-bezier(0.16, 1, 0.3, 1) .36s both; }
+
+/* ── Minimalist Textures ──────────────────────────────────────── */
+
+.dot-grid {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.hero-glow {
+  background: radial-gradient(circle at 50% -20%, rgba(255,255,255,0.1) 0%, transparent 60%);
+}
+
+/* ── Sharp Cards ──────────────────────────────────────────────── */
+
+.glass-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ── Section Headers ──────────────────────────────────────────── */
+
+.section-header {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #888;
+  font-weight: 500;
+}
+
+/* ── Stat Values ──────────────────────────────────────────────── */
+
+.stat-value {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: #fff;
+}
+
+/* ── Interactive Elements ─────────────────────────────────────── */
+
+.badge-dot { animation: pulseGlow 2s ease-in-out infinite; }
+
+/* ── Scrollbars ───────────────────────────────────────────────── */
+
+.log-scroll::-webkit-scrollbar,
+.scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+.log-scroll::-webkit-scrollbar-track,
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.log-scroll::-webkit-scrollbar-thumb,
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 3px;
+}
+.log-scroll::-webkit-scrollbar-thumb:hover,
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+/* ── Log Lines ────────────────────────────────────────────────── */
+
+.log-line { line-height: 1.6; }
+.log-line:hover { background: rgba(255,255,255,0.05); }
+.cursor-blink { animation: blink 1s step-end infinite; }
+
+/* ── Deploy Cards ─────────────────────────────────────────────── */
+
+.deploy-card {
+  border: 1px solid rgba(255,255,255,0.1);
+  background: #000;
+  border-radius: 8px;
+  transition: border-color .15s ease;
+}
+.deploy-card:hover {
+  border-color: rgba(255,255,255,0.25) !important;
+}
+
+/* ── Text Utilities ───────────────────────────────────────────── */
+
+.gradient-text {
+  background: linear-gradient(180deg, #fff 0%, #888 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Shadcn Base Tokens (Stark adjustments) ───────────────────── */
+
 @layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
-
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
- 
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
- 
     --primary: 240 5.9% 10%;
     --primary-foreground: 0 0% 98%;
- 
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
- 
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
- 
     --accent: 240 4.8% 95.9%;
     --accent-foreground: 240 5.9% 10%;
- 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 10% 3.9%;
- 
-    --radius: 0.5rem;
+    --radius: 0.375rem; /* sharper corners */
   }
- 
+
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
- 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
- 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
- 
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
- 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
- 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
- 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
- 
+    --background: 0 0% 0%; /* true black */
+    --foreground: 0 0% 93%; /* #ededed */
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 93%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 93%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 93%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 63%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 93%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
- 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 0 0% 15%; /* #262626 */
+    --input: 0 0% 15%;
+    --ring: 0 0% 100%;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;

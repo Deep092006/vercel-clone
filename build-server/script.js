@@ -69,7 +69,7 @@ async function ensureBucket() {
 async function init() {
     console.log('Executing script.js')
     publishLog('Build Started...')
-    const outDirPath = path.join(__dirname, 'output')
+    const outDirPath = process.env.OUTPUT_DIR || path.join(__dirname, 'output')
 
     const p = exec(`cd ${outDirPath} && npm install && npm run build`)
 
@@ -78,15 +78,24 @@ async function init() {
         publishLog(data.toString())
     })
 
-    p.stdout.on('error', function (data) {
+    p.stderr.on('data', function (data) {
         console.log('Error', data.toString())
         publishLog(`error: ${data.toString()}`)
     })
 
-    p.on('close', async function () {
+    p.on('close', async function (code) {
+        if (code !== 0) {
+            publishLog(`error: build failed with exit code ${code}`)
+            return
+        }
+
         console.log('Build Complete')
         publishLog(`Build Complete`)
-        const distFolderPath = path.join(__dirname, 'output', 'dist')
+        const distFolderPath = path.join(outDirPath, 'dist')
+        if (!fs.existsSync(distFolderPath)) {
+            publishLog('error: dist directory not found')
+            return
+        }
         const distFolderContents = fs.readdirSync(distFolderPath, { recursive: true })
 
         publishLog(`Starting to upload`)

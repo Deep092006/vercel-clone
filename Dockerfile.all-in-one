@@ -1,0 +1,43 @@
+FROM node:20-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    gnupg \
+    git \
+    redis-server \
+    supervisor \
+    bash \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install MongoDB server
+RUN curl -fsSL https://pgp.mongodb.com/server-7.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg \
+    && echo "deb [ arch=amd64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" > /etc/apt/sources.list.d/mongodb-org-7.0.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends mongodb-org-server \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install MinIO + mc binaries
+RUN curl -fsSL https://dl.min.io/server/minio/release/linux-amd64/minio -o /usr/local/bin/minio \
+    && chmod +x /usr/local/bin/minio \
+    && curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc \
+    && chmod +x /usr/local/bin/mc
+
+WORKDIR /app
+
+COPY . .
+
+RUN chmod +x /app/build-server/main.sh \
+    && chmod +x /app/single-image/entrypoint.sh \
+    && chmod +x /app/single-image/minio-init.sh
+
+RUN cd /app/build-server && npm ci \
+    && cd /app/api-server && npm ci \
+    && cd /app/s3-reverse-proxy && npm ci \
+    && cd /app/frontend-nextjs && npm ci && npm run build
+
+EXPOSE 3000 8000 9000 9001 9002 9005 6379 27017
+
+ENTRYPOINT ["/bin/bash", "/app/single-image/entrypoint.sh"]

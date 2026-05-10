@@ -1,7 +1,12 @@
 #!/bin/bash
 
 export GIT_REPOSITORY__URL="$GIT_REPOSITORY__URL"
+OUTPUT_DIR="${OUTPUT_DIR:-/home/app/output}"
 
-git clone "$GIT_REPOSITORY__URL" /home/app/output
+rm -rf "$OUTPUT_DIR"
+git clone "$GIT_REPOSITORY__URL" "$OUTPUT_DIR"
 
-exec node script.js
+node script.js
+status=$?
+rm -rf "$OUTPUT_DIR"
+exit $status

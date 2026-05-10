@@ -1,6 +1,7 @@
 // → app/projects/[id]/page.tsx
 "use client";
 
+import { Navbar } from "@/components/app/navbar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -126,81 +127,19 @@ export default function ProjectDetailPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
-        :root { font-family: 'Geist', system-ui, sans-serif; }
-
-        .dot-grid {
-          background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
-          background-size: 28px 28px;
-        }
+        .step-card { transition: border-color .15s, background .15s; }
+        .step-card:hover .step-icon { border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.07); }
+        .step-icon { transition: border-color .2s, background .2s; }
         .log-scroll::-webkit-scrollbar { width: 4px; }
         .log-scroll::-webkit-scrollbar-track { background: transparent; }
         .log-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
         .log-line { line-height: 1.7; }
         .log-line:hover { background: rgba(255,255,255,0.04); border-radius: 4px; }
-
-        @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
         .cursor-blink { animation: blink 1.1s step-end infinite; }
-
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
         .info-card { transition: border-color .15s; }
         .info-card:hover { border-color: rgba(255,255,255,0.12); }
       `}</style>
-
-      <main className="min-h-screen bg-[#0a0a0a] text-white">
-        <div className="dot-grid fixed inset-0 pointer-events-none" />
-
-        <div className="relative max-w-6xl mx-auto px-6">
-
-          {/* ── NAVBAR ───────────────────────────────────────────────────── */}
-          <header className="flex items-center justify-between h-14 border-b border-white/[0.07]">
-            <div className="flex items-center gap-2.5">
-              <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                <Github className="w-3.5 h-3.5 text-black" />
-              </div>
-              <span className="font-semibold text-sm tracking-tight">DeployKit</span>
-              <ChevronRight className="w-3.5 h-3.5 text-[#333] mx-0.5" />
-              <span className="text-sm text-[#666] truncate max-w-[160px]">
-                {deployment?.repoFullName || "Deployment"}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                asChild variant="ghost" size="sm"
-                className="h-8 px-3 text-xs text-[#888] hover:text-white hover:bg-white/[0.06] rounded-lg"
-              >
-                <Link href="/dashboard">Dashboard</Link>
-              </Button>
-              <Button
-                asChild size="sm"
-                className="h-8 px-3 text-xs bg-white text-black hover:bg-white/90 rounded-lg font-medium"
-              >
-                <Link href="/projects/new">New Project</Link>
-              </Button>
-            </div>
-          </header>
-
-          {/* ── PAGE HEADER ──────────────────────────────────────────────── */}
-          <div className="pt-10 pb-7">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">
-                  {deployment?.repoFullName || "Loading…"}
-                </h1>
-                {deployment?.repoUrl && (
-                  <a
-                    href={deployment.repoUrl}
-                    target="_blank"
-                    className="text-sm text-[#555] hover:text-[#888] transition-colors mt-1 flex items-center gap-1.5 w-fit"
-                  >
-                    {deployment.repoUrl}
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
-              {deployment && <StatusPill status={deployment.status} />}
-            </div>
-          </div>
 
           {/* ── LOADING SKELETON ─────────────────────────────────────────── */}
           {loading && (
@@ -440,11 +379,8 @@ export default function ProjectDetailPage() {
                   <StatusPill status={deployment.status} />
                 </div>
               </div>
-
             </div>
           )}
-        </div>
-      </main>
     </>
   );
 }

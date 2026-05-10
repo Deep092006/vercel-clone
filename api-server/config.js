@@ -25,11 +25,21 @@ function parseNumber(env, name, defaultValue) {
   return value
 }
 
+function parseRunnerMode(env, name, defaultValue) {
+  const raw = env[name]
+  if (!raw) return defaultValue
+  const value = raw.trim().toLowerCase()
+  if (value === 'docker' || value === 'local') return value
+  throw new Error(`Invalid value for ${name}: ${raw}`)
+}
+
 function loadConfig(env = process.env) {
   const redisUrl = requiredEnv(env, 'REDIS_URL')
   const dockerSocketPath = env.DOCKER_SOCKET_PATH || '/var/run/docker.sock'
   const dockerNetwork = env.DOCKER_NETWORK || undefined
   const buildImage = env.BUILD_SERVER_IMAGE || 'vercel-clone-build-server:local'
+  const buildRunnerMode = parseRunnerMode(env, 'BUILD_RUNNER_MODE', 'docker')
+  const buildServerPath = env.BUILD_SERVER_PATH || '/home/app/build-server'
 
   const s3 = {
     bucket: requiredEnv(env, 'S3_BUCKET'),
@@ -46,6 +56,8 @@ function loadConfig(env = process.env) {
     dockerSocketPath,
     dockerNetwork,
     buildImage,
+    buildRunnerMode,
+    buildServerPath,
     s3
   }
 }

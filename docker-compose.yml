@@ -1,4 +1,3 @@
-version: "3.9"
 
 services:
   redis:
@@ -37,11 +36,11 @@ services:
       - /bin/sh
       - -c
       - >
-        until mc alias set local http://minio:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"; do
+        until mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"; do
           echo "waiting for minio..." && sleep 2;
         done;
-        mc mb --ignore-existing local/"$S3_BUCKET" &&
-        mc anonymous set download local/"$S3_BUCKET"
+        mc mb --ignore-existing local/"$$S3_BUCKET" &&
+        mc anonymous set download local/"$$S3_BUCKET"
     restart: "no"
 
   build-server:

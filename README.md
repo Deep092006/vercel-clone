@@ -70,6 +70,24 @@ Notes:
 - Deploy logs are polled by default. Set `NEXT_PUBLIC_SOCKET_ENABLED=true` if you want to use the socket stream on port `9002`.
 - MongoDB is used to store deployments; compose provides it at `mongodb://mongo:27017/vercel_clone`.
 
+### Single Docker Image (One Command)
+
+If you want one image that runs the full stack by itself (Mongo + Redis + MinIO + API + proxy + frontend), use:
+
+1. Build:
+   - `docker build -f Dockerfile.all-in-one -t vercel-clone-all-in-one .`
+2. Run:
+   - `docker run --rm -it \
+     -p 3000:3000 -p 8000:8000 -p 9000:9000 -p 9001:9001 -p 9002:9002 -p 9005:9005 -p 6379:6379 -p 27017:27017 \
+     -e GITHUB_CLIENT_ID=YOUR_ID \
+     -e GITHUB_CLIENT_SECRET=YOUR_SECRET \
+     -e GITHUB_REDIRECT_URI=http://localhost:3000/api/auth/github/callback \
+     vercel-clone-all-in-one`
+
+Notes:
+- This mode uses a local build runner (`BUILD_RUNNER_MODE=local`) inside the same container, so no Docker socket mount is required.
+- You can override defaults (bucket, MinIO creds, Mongo URI, API URLs) with `-e` env vars when running the container.
+
 ### GitHub OAuth
 
 Set these environment variables to enable GitHub login with **repo** scope:

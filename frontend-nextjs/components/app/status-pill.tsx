@@ -1,24 +1,34 @@
-import { statusLabel } from "@/lib/deployments";
+"use client";
+
 import { cn } from "@/lib/utils";
 
-const statusClassMap: Record<string, string> = {
-  queued: "border-slate-700 text-slate-300",
-  building: "border-blue-700 text-blue-300",
-  uploading: "border-amber-700 text-amber-300",
-  ready: "border-emerald-700 text-emerald-300",
-  failed: "border-rose-700 text-rose-300",
+const statusConfig: Record<string, { label: string; color: string; bg: string; animate?: boolean; glow?: boolean }> = {
+  queued:    { label: "Queued",    color: "text-amber-400",   bg: "bg-amber-400/10" },
+  building:  { label: "Building",  color: "text-sky-400",     bg: "bg-sky-400/10", animate: true },
+  uploading: { label: "Uploading", color: "text-violet-400",  bg: "bg-violet-400/10", animate: true },
+  ready:     { label: "Ready",     color: "text-emerald-400", bg: "bg-emerald-400/10", glow: true },
+  failed:    { label: "Failed",    color: "text-red-400",     bg: "bg-red-400/10" },
+  error:     { label: "Error",     color: "text-red-400",     bg: "bg-red-400/10" },
 };
 
 export function StatusPill({ status }: { status?: string }) {
-  const key = status || "queued";
+  const cfg = statusConfig[status || ""] || { label: status || "Unknown", color: "text-[#888]", bg: "bg-white/5" };
+
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium",
-        statusClassMap[key] || statusClassMap.queued
-      )}
-    >
-      {statusLabel(status)}
-    </span>
+    <div className={cn(
+      "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[13px] font-medium transition-all",
+      cfg.bg, cfg.color,
+      cfg.glow && "shadow-[0_0_12px_rgba(52,211,153,0.15)]"
+    )}>
+      <span className={cn(
+        "w-2 h-2 rounded-full",
+        status === "ready" ? "bg-emerald-400" :
+        status === "failed" || status === "error" ? "bg-red-400" :
+        status === "building" || status === "uploading" ? "bg-sky-400" :
+        "bg-amber-400",
+        cfg.animate && "animate-pulse"
+      )} />
+      {cfg.label}
+    </div>
   );
 }
